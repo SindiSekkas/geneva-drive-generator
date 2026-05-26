@@ -3,8 +3,10 @@ import { deriveParams } from '../src/geneva/params';
 import { buildWheelProfile, buildCrankProfile } from '../src/geneva/geometry';
 import type { Primitive } from '../src/geneva/primitives';
 
+const defaultParams = deriveParams({ mode: 'b', b: 55, n: 6, p: 4, t: 0.1 });
+
 test('wheel profile has n rim arcs', () => {
-  const params = deriveParams({ mode: 'b', b: 55, n: 6, p: 4, t: 0.1 });
+  const params = defaultParams;
   const profile = buildWheelProfile(params);
   const rimArcs = profile.filter((p) => p.layer === 'wheel_outer');
   expect(rimArcs).toHaveLength(6);
@@ -12,7 +14,7 @@ test('wheel profile has n rim arcs', () => {
 });
 
 test('wheel profile has n stop-disc cutout circles', () => {
-  const params = deriveParams({ mode: 'b', b: 55, n: 6, p: 4, t: 0.1 });
+  const params = defaultParams;
   const profile = buildWheelProfile(params);
   const stops = profile.filter((p) => p.layer === 'wheel_stop_cutouts');
   expect(stops).toHaveLength(6);
@@ -20,7 +22,7 @@ test('wheel profile has n stop-disc cutout circles', () => {
 });
 
 test('wheel profile has n slot stadiums (2n lines + n inner arcs)', () => {
-  const params = deriveParams({ mode: 'b', b: 55, n: 6, p: 4, t: 0.1 });
+  const params = defaultParams;
   const profile = buildWheelProfile(params);
   const slotLines = profile.filter(
     (p) => p.layer === 'wheel_slots' && p.kind === 'line'
@@ -33,7 +35,7 @@ test('wheel profile has n slot stadiums (2n lines + n inner arcs)', () => {
 });
 
 test('crank profile has outer circle, pin circle, and 2 stop-disc arcs', () => {
-  const params = deriveParams({ mode: 'b', b: 55, n: 6, p: 4, t: 0.1 });
+  const params = defaultParams;
   const profile = buildCrankProfile(params);
   const outer = profile.filter((p) => p.layer === 'crank_outer');
   const pin = profile.filter((p) => p.layer === 'crank_pin');
@@ -47,7 +49,7 @@ test('crank profile has outer circle, pin circle, and 2 stop-disc arcs', () => {
 });
 
 test('crank profile honors offsetX (defaults to c)', () => {
-  const params = deriveParams({ mode: 'b', b: 55, n: 6, p: 4, t: 0.1 });
+  const params = defaultParams;
   const profile = buildCrankProfile(params);
   const outer = profile.find((p) => p.layer === 'crank_outer') as
     | { cx: number }
@@ -62,7 +64,7 @@ function allCoords(p: Primitive): number[] {
 }
 
 test('every primitive in both profiles has finite coordinates', () => {
-  const params = deriveParams({ mode: 'b', b: 55, n: 6, p: 4, t: 0.1 });
+  const params = defaultParams;
   const all = [...buildWheelProfile(params), ...buildCrankProfile(params)];
   for (const prim of all) {
     for (const v of allCoords(prim)) {

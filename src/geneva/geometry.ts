@@ -10,14 +10,14 @@ export function buildWheelProfile(params: GenevaParams): Profile {
   const out: Profile = [];
 
   // Half-angle subtended by the slot opening at the wheel center.
-  const slotHalfAngle = Math.asin(w / 2 / b);
+  const slotHalfAngle = Math.asin((w / 2) / b);
 
   // 1. Rim: n arcs between slot openings.
   for (let i = 0; i < n; i++) {
     const slotCenter = (i * 2 * Math.PI) / n;
     const arcStart = slotCenter + slotHalfAngle;
     const arcEnd = slotCenter + (2 * Math.PI) / n - slotHalfAngle;
-    const arc: Arc = {
+    out.push({
       kind: 'arc',
       cx: 0,
       cy: 0,
@@ -25,27 +25,30 @@ export function buildWheelProfile(params: GenevaParams): Profile {
       startAngle: arcStart,
       endAngle: arcEnd,
       layer: 'wheel_outer',
-    };
-    out.push(arc);
+    } satisfies Arc);
   }
 
   // 2. Slots: each is a stadium opened to the wheel rim.
+  // Loop-invariant geometry: build in canonical orientation (along +x), rotate per slot.
+  const halfW = w / 2;
+  // b - s == b - (a + b - c) == c - a: radial depth of the slot's inner end.
+  const innerCenterX = b - s;
+  // x-coordinate of the rim edge where each slot opens.
+  const lineOuterX = Math.sqrt(b * b - halfW * halfW);
   for (let i = 0; i < n; i++) {
     const slotAngle = (i * 2 * Math.PI) / n;
-    // Build the slot in canonical orientation (along +x) then rotate.
-    const innerCenterX = b - s; // center of the inner semicircle
-    const halfW = w / 2;
-    // Two parallel lines from rim opening inward to the semicircle tangent.
-    const lineOuterX = Math.sqrt(b * b - halfW * halfW);
-    const lineInnerX = innerCenterX;
+    // Cache trig values; each is used 4 times (two rotate calls per side).
+    const cosA = Math.cos(slotAngle);
+    const sinA = Math.sin(slotAngle);
     const rotate = (x: number, ry: number) => ({
-      x: x * Math.cos(slotAngle) - ry * Math.sin(slotAngle),
-      y: x * Math.sin(slotAngle) + ry * Math.cos(slotAngle),
+      x: x * cosA - ry * sinA,
+      y: x * sinA + ry * cosA,
     });
     const a1 = rotate(lineOuterX, +halfW);
-    const a2 = rotate(lineInnerX, +halfW);
+    const a2 = rotate(innerCenterX, +halfW);
     const b1 = rotate(lineOuterX, -halfW);
-    const b2 = rotate(lineInnerX, -halfW);
+    const b2 = rotate(innerCenterX, -halfW);
+    // Two parallel lines from rim opening inward to the semicircle tangent.
     out.push({
       kind: 'line', layer: 'wheel_slots',
       x1: a1.x, y1: a1.y, x2: a2.x, y2: a2.y,
@@ -58,8 +61,8 @@ export function buildWheelProfile(params: GenevaParams): Profile {
     // sweeping from +90° to +270° (closed end of the stadium).
     out.push({
       kind: 'arc', layer: 'wheel_slots',
-      cx: innerCenterX * Math.cos(slotAngle),
-      cy: innerCenterX * Math.sin(slotAngle),
+      cx: innerCenterX * cosA,
+      cy: innerCenterX * sinA,
       r: halfW,
       startAngle: slotAngle + Math.PI / 2,
       endAngle: slotAngle + (3 * Math.PI) / 2,
@@ -72,14 +75,13 @@ export function buildWheelProfile(params: GenevaParams): Profile {
   const halfPitch = Math.PI / n;
   for (let i = 0; i < n; i++) {
     const angle = halfPitch + (i * 2 * Math.PI) / n;
-    const circle: Circle = {
+    out.push({
       kind: 'circle',
       cx: c * Math.cos(angle),
       cy: c * Math.sin(angle),
       r: y,
       layer: 'wheel_stop_cutouts',
-    };
-    out.push(circle);
+    } satisfies Circle);
   }
 
   return out;
@@ -104,9 +106,10 @@ export function buildCrankProfile(
     cy: 0,
     r: a + p,
     layer: 'crank_outer',
-  });
+  } satisfies Circle);
 
-  // 2. Pin (starts at the angle where it would just enter a wheel slot).
+  // 2. Pin at the far-side dwell position (between slots, pin just clear of wheel).
+  //    π − atan(b/a) places the pin on the far side of the line of centers.
   const pinStart = Math.PI - Math.atan(b / a);
   out.push({
     kind: 'circle',
@@ -114,7 +117,7 @@ export function buildCrankProfile(
     cy: a * Math.sin(pinStart),
     r: p / 2,
     layer: 'crank_pin',
-  });
+  } satisfies Circle);
 
   // 3. Stop disc outline: convex z-arc on the crank center +
   //    concave clearance v-arc cut from one side. Matches the SVG mask
@@ -130,7 +133,7 @@ export function buildCrankProfile(
     startAngle: 0,
     endAngle: 2 * Math.PI,
     layer: 'crank_stop_disc',
-  });
+  } satisfies Arc);
   out.push({
     kind: 'arc',
     cx: offsetX - z,
@@ -139,7 +142,7 @@ export function buildCrankProfile(
     startAngle: 0,
     endAngle: 2 * Math.PI,
     layer: 'crank_stop_disc',
-  });
+  } satisfies Arc);
 
   return out;
 }
