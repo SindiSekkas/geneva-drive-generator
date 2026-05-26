@@ -7,6 +7,7 @@ import { PreviewControls } from './components/PreviewControls';
 import { ExportBar } from './components/ExportBar';
 import { useGenevaParams } from './hooks/useGenevaParams';
 import { useUrlState, parseUrl } from './hooks/useUrlState';
+import { useAnimation } from './hooks/useAnimation';
 
 /** Four corner brackets that frame the preview SVG — viewfinder/CAD vibe. */
 function CornerTicks() {
@@ -24,6 +25,7 @@ function CornerTicks() {
 
 export default function App() {
   const { state, dispatch, params } = useGenevaParams();
+  const { driveAngleDeg, wheelAngleDeg } = useAnimation(params, state.animate);
 
   useEffect(() => {
     const fromUrl = parseUrl(window.location.search);
@@ -76,6 +78,8 @@ export default function App() {
               <Preview
                 params={params}
                 showDimensions={state.showDimensions}
+                driveAngleDeg={driveAngleDeg}
+                wheelAngleDeg={wheelAngleDeg}
               />
             </div>
 
