@@ -1,3 +1,10 @@
+import { Header } from './components/Header';
+
 export default function App() {
-  return <div className="p-8 text-2xl font-mono text-accent">Geneva Drive Generator</div>;
+  return (
+    <div className="min-h-screen">
+      <Header />
+      <main className="mx-auto max-w-[1200px] px-6 py-8" />
+    </div>
+  );
 }
