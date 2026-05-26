@@ -119,30 +119,23 @@ export function buildCrankProfile(
     layer: 'crank_pin',
   } satisfies Circle);
 
-  // 3. Stop disc outline: convex z-arc on the crank center +
-  //    concave clearance v-arc cut from one side. Matches the SVG mask
-  //    in the source repo: white circle radius z at drive center MINUS
-  //    black circle radius v centered at (drive.x - z, drive.y - v).
-  // For v1 we emit both as full circles (arcs 0..2π); Fusion's region
-  // detector handles the boolean.
+  // 3. Stop disc outline: z-circle at crank center, v-circle clearance cutout
+  //    at (offsetX - z, -v). Emitted as Circle primitives (not full-circle arcs)
+  //    so they import cleanly into strict DXF parsers as well as Fusion.
   out.push({
-    kind: 'arc',
+    kind: 'circle',
     cx: offsetX,
     cy: 0,
     r: z,
-    startAngle: 0,
-    endAngle: 2 * Math.PI,
     layer: 'crank_stop_disc',
-  } satisfies Arc);
+  } satisfies Circle);
   out.push({
-    kind: 'arc',
+    kind: 'circle',
     cx: offsetX - z,
     cy: -v,
     r: v,
-    startAngle: 0,
-    endAngle: 2 * Math.PI,
     layer: 'crank_stop_disc',
-  } satisfies Arc);
+  } satisfies Circle);
 
   return out;
 }

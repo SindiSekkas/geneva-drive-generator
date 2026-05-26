@@ -20,7 +20,7 @@ function header(): string {
     code(0, 'SECTION'),
     code(2, 'HEADER'),
     code(9, '$ACADVER'),
-    code(1, 'AC1009'),
+    code(1, 'AC1015'),
     code(9, '$INSUNITS'),
     code(70, 4), // 4 = millimeters
     code(0, 'ENDSEC'),

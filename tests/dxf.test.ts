@@ -33,8 +33,8 @@ test('DXF contains the expected entity counts', () => {
   const arcs = (s.match(/^ARC$/gm) ?? []).length;
   const lines = (s.match(/^LINE$/gm) ?? []).length;
   // Wheel: 6 rim arcs + 12 slot lines + 6 slot inner arcs + 6 stop cutout circles
-  // Crank: 1 outer circle + 1 pin circle + 2 stop-disc arcs
-  expect(circles).toBe(6 + 2); // wheel cutouts + crank outer + pin
-  expect(arcs).toBe(6 + 6 + 2); // wheel rim + slot inners + crank stop disc
+  // Crank: 1 outer circle + 1 pin circle + 2 stop-disc circles
+  expect(circles).toBe(6 + 2 + 2); // wheel cutouts + crank outer + pin + crank stop disc
+  expect(arcs).toBe(6 + 6); // wheel rim + slot inners
   expect(lines).toBe(12);
 });

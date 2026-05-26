@@ -34,7 +34,7 @@ test('wheel profile has n slot stadiums (2n lines + n inner arcs)', () => {
   expect(slotArcs).toHaveLength(6); // 1 per slot
 });
 
-test('crank profile has outer circle, pin circle, and 2 stop-disc arcs', () => {
+test('crank profile has outer circle, pin circle, and 2 stop-disc circles', () => {
   const params = defaultParams;
   const profile = buildCrankProfile(params);
   const outer = profile.filter((p) => p.layer === 'crank_outer');
@@ -45,7 +45,7 @@ test('crank profile has outer circle, pin circle, and 2 stop-disc arcs', () => {
   expect(pin).toHaveLength(1);
   expect(pin[0].kind).toBe('circle');
   expect(stop).toHaveLength(2);
-  for (const arc of stop) expect(arc.kind).toBe('arc');
+  for (const c of stop) expect(c.kind).toBe('circle');
 });
 
 test('crank profile honors offsetX (defaults to c)', () => {
