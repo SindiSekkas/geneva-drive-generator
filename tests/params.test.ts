@@ -40,5 +40,5 @@ test('pin too large for crank radius (y negative) warns', () => {
 
 test('negative or zero radius input warns', () => {
   const out = deriveParams({ mode: 'b', b: 0, n: 6, p: 4, t: 0.1 });
-  expect(out.warnings.length).toBeGreaterThan(0);
+  expect(out.warnings.some((w) => /wheel radius/i.test(w))).toBe(true);
 });
