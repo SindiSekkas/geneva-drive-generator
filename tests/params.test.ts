@@ -13,3 +13,17 @@ test('n=6, b=55, p=4, t=0.1 produces the screenshot reference values', () => {
   expect(out.v).toBeCloseTo(44.4345, 4);
   expect(out.warnings).toEqual([]);
 });
+
+test('n=4, b=105 produces c ≈ 148.49 (blog comment)', () => {
+  const out = deriveParams({ mode: 'b', b: 105, n: 4, p: 1, t: 0.05 });
+  expect(out.c).toBeCloseTo(148.49, 2);
+});
+
+test('a-mode and b-mode are equivalent for the same geometry', () => {
+  const bMode = deriveParams({ mode: 'b', b: 55, n: 6, p: 4, t: 0.1 });
+  const aMode = deriveParams({ mode: 'a', a: bMode.a, n: 6, p: 4, t: 0.1 });
+  expect(aMode.b).toBeCloseTo(bMode.b, 6);
+  expect(aMode.c).toBeCloseTo(bMode.c, 6);
+  expect(aMode.s).toBeCloseTo(bMode.s, 6);
+  expect(aMode.y).toBeCloseTo(bMode.y, 6);
+});
