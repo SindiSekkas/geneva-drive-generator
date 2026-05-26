@@ -44,8 +44,13 @@ export function useAnimation(params: GenevaParams, enabled: boolean) {
   const pinY = params.a * Math.sin(pinAngle);
   const distFromWheelCenter = Math.hypot(pinX, pinY);
 
+  // Engagement threshold: the pin's OUTER edge (not its center) must be at or
+  // inside the wheel rim. Using `b - p/2` accounts for the pin's finite radius
+  // so the wheel doesn't appear to "jump" before the pin is visibly in a slot.
+  const engagementRadius = params.b - params.p / 2;
+
   let wheelAngleDeg: number;
-  if (distFromWheelCenter <= params.b) {
+  if (distFromWheelCenter <= engagementRadius) {
     wheelAngleDeg = (Math.atan2(pinY, pinX) * 180) / Math.PI;
   } else {
     wheelAngleDeg = 180 / params.n;

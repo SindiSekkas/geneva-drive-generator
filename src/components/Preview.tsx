@@ -74,12 +74,19 @@ export function Preview({
 
   const dimC = showDimensions ? params.c : 0;
 
+  // Crosshair size scales with the smaller part so they read at any scale
+  // (3 mm fixed was huge on a 11 mm wheel).
+  const crossSize = Math.max(Math.min(params.a, params.b) * 0.06, 0.5);
+  const crossStroke = Math.max(Math.min(params.a, params.b) * 0.008, 0.1);
+
   // Pin world-coordinates (for the optional "engagement halo" cue during animation).
   const pinStart = Math.PI - Math.atan(params.b / params.a);
   const pinTheta = pinStart + (driveAngleDeg * Math.PI) / 180;
   const pinX = params.c + params.a * Math.cos(pinTheta);
   const pinY = params.a * Math.sin(pinTheta);
-  const pinInWheel = Math.hypot(pinX, pinY) <= params.b;
+  // Match the engagement threshold in useAnimation so the halo lights up
+  // exactly when the wheel begins to follow the pin.
+  const pinInWheel = Math.hypot(pinX, pinY) <= params.b - params.p / 2;
 
   return (
     <svg
@@ -112,12 +119,13 @@ export function Preview({
 
       {/* Math-space (y-up). */}
       <g transform="scale(1,-1)">
-        {/* Crosshairs at part origins. */}
-        <g className="stroke-fg-subtle/45" strokeWidth={0.6} vectorEffect="non-scaling-stroke">
-          <line x1={-3} y1={0} x2={3} y2={0} />
-          <line x1={0} y1={-3} x2={0} y2={3} />
-          <line x1={params.c - 3} y1={0} x2={params.c + 3} y2={0} />
-          <line x1={params.c} y1={-3} x2={params.c} y2={3} />
+        {/* Crosshairs at part origins — scaled to geometry so they stay small
+            but still readable at any zoom level. */}
+        <g className="stroke-fg-subtle/40" strokeWidth={crossStroke} vectorEffect="non-scaling-stroke">
+          <line x1={-crossSize} y1={0} x2={crossSize} y2={0} />
+          <line x1={0} y1={-crossSize} x2={0} y2={crossSize} />
+          <line x1={params.c - crossSize} y1={0} x2={params.c + crossSize} y2={0} />
+          <line x1={params.c} y1={-crossSize} x2={params.c} y2={crossSize} />
         </g>
 
         {/* Center-distance c indicator (dashed, only when "Dimensions" is on). */}

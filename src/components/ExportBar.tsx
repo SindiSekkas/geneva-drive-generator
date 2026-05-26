@@ -43,13 +43,13 @@ export function ExportBar({ params }: { params: GenevaParams }) {
         </span>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         {/* Primary DXF button. */}
         <button
           type="button"
           onClick={handleDxf}
           className={cn(
-            'group relative flex items-center gap-2.5 rounded-md bg-accent px-4 py-2.5',
+            'group relative flex shrink-0 items-center gap-2.5 rounded-md bg-accent px-4 py-2.5',
             'font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-accent-fg',
             'btn-physical transition-all duration-150',
             'hover:-translate-y-px active:translate-y-0'
@@ -57,7 +57,8 @@ export function ExportBar({ params }: { params: GenevaParams }) {
         >
           <DownloadIcon className="size-3.5 transition-transform duration-200 group-hover:translate-y-px" />
           Export DXF
-          <span className="ml-1 font-mono text-[10px] tracking-[0.16em] text-accent-fg/60">
+          {/* Filename hint — hidden below ~sm because it makes the row too wide. */}
+          <span className="ml-1 hidden font-mono text-[10px] tracking-[0.16em] text-accent-fg/60 sm:inline">
             ↳ geneva-drive.dxf
           </span>
         </button>
@@ -73,7 +74,7 @@ export function ExportBar({ params }: { params: GenevaParams }) {
             aria-disabled
             disabled
             className={cn(
-              'flex cursor-not-allowed items-center gap-2.5 rounded-md border border-border bg-bg-elev-2 px-4 py-2.5',
+              'flex shrink-0 cursor-not-allowed items-center gap-2.5 rounded-md border border-border bg-bg-elev-2 px-4 py-2.5',
               'font-mono text-[11px] uppercase tracking-[0.18em] text-fg-subtle opacity-50'
             )}
           >
@@ -95,7 +96,6 @@ export function ExportBar({ params }: { params: GenevaParams }) {
                 <span className="size-1.5 rounded-full bg-warn pulse-soft" />
                 STL Export · In Development
               </span>
-              {/* little upward arrow */}
               <span className="absolute -top-1 left-1/2 size-2 -translate-x-1/2 rotate-45 border-l border-t border-border-bright bg-bg-elev-2" />
             </div>
           )}
