@@ -1,0 +1,28 @@
+import { test, expect } from 'vitest';
+import { deriveParams } from '../src/geneva/params';
+import { buildWheelProfile, buildCrankProfile } from '../src/geneva/geometry';
+import { profilesToDxf } from '../src/geneva/exporters/dxf';
+
+const params = deriveParams({ mode: 'b', b: 55, n: 6, p: 4, t: 0.1 });
+const dxf = () => profilesToDxf([buildWheelProfile(params), buildCrankProfile(params)]);
+
+test('DXF starts with SECTION and ends with EOF', () => {
+  const s = dxf();
+  expect(s).toMatch(/^0\r?\nSECTION/);
+  expect(s.trimEnd()).toMatch(/EOF$/);
+});
+
+test('DXF contains a LAYER table with every layer used', () => {
+  const s = dxf();
+  for (const layer of [
+    'wheel_outer', 'wheel_slots', 'wheel_stop_cutouts',
+    'crank_outer', 'crank_pin', 'crank_stop_disc',
+  ]) {
+    expect(s).toContain(layer);
+  }
+  expect(s).toContain('LAYER');
+});
+
+test('DXF declares millimeter units ($INSUNITS 4)', () => {
+  expect(dxf()).toMatch(/\$INSUNITS[\r\n]+\s*70[\r\n]+\s*4/);
+});
