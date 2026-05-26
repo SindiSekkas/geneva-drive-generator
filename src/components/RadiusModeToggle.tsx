@@ -13,18 +13,26 @@ export function RadiusModeToggle({ mode, onChange }: Props) {
       onClick={() => onChange(value)}
       aria-pressed={mode === value}
       className={cn(
-        'flex-1 rounded-md px-3 py-1.5 font-mono text-xs uppercase tracking-wide',
-        'transition-colors',
+        'relative flex-1 rounded-[5px] px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.16em]',
+        'transition-all duration-150',
         mode === value
-          ? 'bg-accent text-accent-fg'
-          : 'text-fg-muted hover:text-fg'
+          ? 'bg-bg text-fg shadow-[inset_0_0_0_1px_var(--color-border-bright),0_1px_0_rgba(0,0,0,0.4)]'
+          : 'text-fg-subtle hover:text-fg-muted'
       )}
     >
-      {label}
+      <span className="flex items-center justify-center gap-2">
+        <span
+          className={cn(
+            'size-1 rounded-full transition-colors',
+            mode === value ? 'bg-accent' : 'bg-fg-subtle/40'
+          )}
+        />
+        {label}
+      </span>
     </button>
   );
   return (
-    <div className="flex gap-1 rounded-md border border-border bg-bg-elev p-1">
+    <div className="flex gap-1 rounded-md border border-border bg-bg-elev-2 p-1">
       <Btn value="a" label="a · crank radius" />
       <Btn value="b" label="b · wheel radius" />
     </div>

@@ -8,26 +8,157 @@
 @theme {
   --color-bg: #0B0D10;
   --color-bg-elev: #13161A;
+  --color-bg-elev-2: #181B20;
   --color-border: #23272E;
+  --color-border-bright: #2F3640;
   --color-fg: #E6E8EB;
   --color-fg-muted: #8A9099;
   --color-fg-subtle: #5A6068;
   --color-accent: #5B8DEF;
   --color-accent-fg: #FFFFFF;
+  --color-accent-dim: rgba(91, 141, 239, 0.25);
   --color-warn: #E0B341;
   --color-wheel: #5B8DEF;
-  --color-crank: #8A9099;
+  --color-crank: #B0B6BD;
 
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
+
+  --ease-precision: cubic-bezier(0.2, 0, 0, 1);
 
   --radius: 0.5rem;
 }
 
 html, body, #root { height: 100%; }
 body {
-  background: var(--color-bg);
+  background-color: var(--color-bg);
+  /* Faint engineering dot grid backdrop — 24px lattice at <3% opacity */
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(230, 232, 235, 0.025) 1px, transparent 0);
+  background-size: 24px 24px;
+  background-position: 0 0;
   color: var(--color-fg);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  font-feature-settings: "ss01", "cv11";
 }
+
+::selection {
+  background: var(--color-accent-dim);
+  color: var(--color-fg);
+}
+
+/* Page-load reveal — staggered fades. */
+@keyframes reveal {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.reveal {
+  animation: reveal 400ms var(--ease-precision) both;
+}
+
+/* Number-change crossfade — used on derived value rows. */
+@keyframes value-flash {
+  from { color: var(--color-accent); }
+  to   { color: var(--color-fg); }
+}
+.value-flash {
+  animation: value-flash 250ms var(--ease-precision);
+}
+
+/* Slow-pulse for "READY" status dot. */
+@keyframes pulse-soft {
+  0%, 100% { opacity: 0.5; }
+  50%      { opacity: 1; }
+}
+.pulse-soft {
+  animation: pulse-soft 2.4s ease-in-out infinite;
+}
+
+/* Tooltip fade-in (use after a 100ms delay via CSS animation-delay). */
+@keyframes tip-in {
+  from { opacity: 0; transform: translate(-50%, -2px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+.tip-in {
+  animation: tip-in 140ms var(--ease-precision) 100ms both;
+}
+
+/* Subtle inset highlight on solid buttons (precision-instrument detail). */
+.btn-physical {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.30),
+    0 1px 0 rgba(0, 0, 0, 0.4);
+}
+.btn-physical:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.30),
+    0 1px 0 rgba(0, 0, 0, 0.4),
+    0 0 0 3px var(--color-accent-dim);
+}
+
+/* Range slider — hairline track with custom thumb. */
+input[type="range"].slider-precision {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  height: 16px;
+  cursor: pointer;
+}
+input[type="range"].slider-precision::-webkit-slider-runnable-track {
+  height: 2px;
+  background: var(--color-border-bright);
+  border-radius: 9999px;
+}
+input[type="range"].slider-precision::-moz-range-track {
+  height: 2px;
+  background: var(--color-border-bright);
+  border-radius: 9999px;
+}
+input[type="range"].slider-precision::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: var(--color-accent);
+  border: 2px solid var(--color-bg);
+  margin-top: -6px;
+  transition: transform 150ms var(--ease-precision), box-shadow 150ms var(--ease-precision);
+  box-shadow: 0 0 0 0 var(--color-accent-dim);
+}
+input[type="range"].slider-precision::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: var(--color-accent);
+  border: 2px solid var(--color-bg);
+  transition: transform 150ms var(--ease-precision), box-shadow 150ms var(--ease-precision);
+}
+input[type="range"].slider-precision:hover::-webkit-slider-thumb {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 4px var(--color-accent-dim);
+}
+input[type="range"].slider-precision:active::-webkit-slider-thumb,
+input[type="range"].slider-precision:focus-visible::-webkit-slider-thumb {
+  transform: scale(1.2);
+  box-shadow: 0 0 0 5px var(--color-accent-dim);
+}
+input[type="range"].slider-precision:focus-visible {
+  outline: none;
+}
+
+/* Number input chrome — remove browser spinner for cleaner look. */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Hide scrollbar on horizontal containers if any. */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
