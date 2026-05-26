@@ -84,3 +84,62 @@ export function buildWheelProfile(params: GenevaParams): Profile {
 
   return out;
 }
+
+/**
+ * Builds the 2D profile of the drive crank.
+ * By default centers it at (c, 0) so wheel and crank ship in assembly position.
+ * Layers: crank_outer, crank_pin, crank_stop_disc
+ */
+export function buildCrankProfile(
+  params: GenevaParams,
+  offsetX: number = params.c
+): Profile {
+  const { a, b, p, z, v } = params;
+  const out: Profile = [];
+
+  // 1. Outer disc
+  out.push({
+    kind: 'circle',
+    cx: offsetX,
+    cy: 0,
+    r: a + p,
+    layer: 'crank_outer',
+  });
+
+  // 2. Pin (starts at the angle where it would just enter a wheel slot).
+  const pinStart = Math.PI - Math.atan(b / a);
+  out.push({
+    kind: 'circle',
+    cx: offsetX + a * Math.cos(pinStart),
+    cy: a * Math.sin(pinStart),
+    r: p / 2,
+    layer: 'crank_pin',
+  });
+
+  // 3. Stop disc outline: convex z-arc on the crank center +
+  //    concave clearance v-arc cut from one side. Matches the SVG mask
+  //    in the source repo: white circle radius z at drive center MINUS
+  //    black circle radius v centered at (drive.x - z, drive.y - v).
+  // For v1 we emit both as full circles (arcs 0..2π); Fusion's region
+  // detector handles the boolean.
+  out.push({
+    kind: 'arc',
+    cx: offsetX,
+    cy: 0,
+    r: z,
+    startAngle: 0,
+    endAngle: 2 * Math.PI,
+    layer: 'crank_stop_disc',
+  });
+  out.push({
+    kind: 'arc',
+    cx: offsetX - z,
+    cy: -v,
+    r: v,
+    startAngle: 0,
+    endAngle: 2 * Math.PI,
+    layer: 'crank_stop_disc',
+  });
+
+  return out;
+}

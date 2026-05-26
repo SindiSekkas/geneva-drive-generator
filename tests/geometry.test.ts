@@ -1,6 +1,6 @@
 import { test, expect } from 'vitest';
 import { deriveParams } from '../src/geneva/params';
-import { buildWheelProfile } from '../src/geneva/geometry';
+import { buildWheelProfile, buildCrankProfile } from '../src/geneva/geometry';
 
 test('wheel profile has n rim arcs', () => {
   const params = deriveParams({ mode: 'b', b: 55, n: 6, p: 4, t: 0.1 });
@@ -29,4 +29,27 @@ test('wheel profile has n slot stadiums (2n lines + n inner arcs)', () => {
   );
   expect(slotLines).toHaveLength(12); // 2 per slot
   expect(slotArcs).toHaveLength(6); // 1 per slot
+});
+
+test('crank profile has outer circle, pin circle, and 2 stop-disc arcs', () => {
+  const params = deriveParams({ mode: 'b', b: 55, n: 6, p: 4, t: 0.1 });
+  const profile = buildCrankProfile(params);
+  const outer = profile.filter((p) => p.layer === 'crank_outer');
+  const pin = profile.filter((p) => p.layer === 'crank_pin');
+  const stop = profile.filter((p) => p.layer === 'crank_stop_disc');
+  expect(outer).toHaveLength(1);
+  expect(outer[0].kind).toBe('circle');
+  expect(pin).toHaveLength(1);
+  expect(pin[0].kind).toBe('circle');
+  expect(stop).toHaveLength(2);
+  for (const arc of stop) expect(arc.kind).toBe('arc');
+});
+
+test('crank profile honors offsetX (defaults to c)', () => {
+  const params = deriveParams({ mode: 'b', b: 55, n: 6, p: 4, t: 0.1 });
+  const profile = buildCrankProfile(params);
+  const outer = profile.find((p) => p.layer === 'crank_outer') as
+    | { cx: number }
+    | undefined;
+  expect(outer?.cx).toBeCloseTo(params.c, 6);
 });
