@@ -27,6 +27,17 @@ export interface GenevaParams {
 export function deriveParams(input: GenevaInput): GenevaParams {
   const { n, p, t } = input;
   const warnings: string[] = [];
+  if (!Number.isInteger(n) || n < 3) {
+    warnings.push('n must be at least 3 (got ' + n + ')');
+  }
+  if (p <= 0) warnings.push('Pin diameter p must be positive (got ' + p + ')');
+  if (t < 0) warnings.push('Clearance t must be non-negative (got ' + t + ')');
+  if (input.mode === 'b' && (input.b ?? 0) <= 0) {
+    warnings.push('Wheel radius b must be positive');
+  }
+  if (input.mode === 'a' && (input.a ?? 0) <= 0) {
+    warnings.push('Crank radius a must be positive');
+  }
   const halfAngle = Math.PI / n;
 
   let a: number;
@@ -45,6 +56,11 @@ export function deriveParams(input: GenevaInput): GenevaParams {
   const s = a + b - c;
   const w = p + t;
   const y = a - 1.5 * p;
+  if (y <= 0) {
+    warnings.push(
+      'Stop arc radius y is not positive — pin is too large relative to crank radius'
+    );
+  }
   const z = y - t;
   const v = (b * z) / a;
 

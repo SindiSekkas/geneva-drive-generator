@@ -27,3 +27,18 @@ test('a-mode and b-mode are equivalent for the same geometry', () => {
   expect(aMode.s).toBeCloseTo(bMode.s, 6);
   expect(aMode.y).toBeCloseTo(bMode.y, 6);
 });
+
+test('n < 3 produces a warning', () => {
+  const out = deriveParams({ mode: 'b', b: 55, n: 2, p: 4, t: 0.1 });
+  expect(out.warnings.some((w) => /n must be at least 3/i.test(w))).toBe(true);
+});
+
+test('pin too large for crank radius (y negative) warns', () => {
+  const out = deriveParams({ mode: 'b', b: 10, n: 6, p: 20, t: 0.1 });
+  expect(out.warnings.some((w) => /stop arc radius/i.test(w))).toBe(true);
+});
+
+test('negative or zero radius input warns', () => {
+  const out = deriveParams({ mode: 'b', b: 0, n: 6, p: 4, t: 0.1 });
+  expect(out.warnings.length).toBeGreaterThan(0);
+});
