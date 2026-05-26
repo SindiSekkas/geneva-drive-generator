@@ -1,8 +1,5 @@
-import { useMemo } from 'react';
+import { useId, useMemo } from 'react';
 import type { GenevaParams } from '../geneva/params';
-import { buildWheelProfile, buildCrankProfile } from '../geneva/geometry';
-import { primitiveToSvgEntity, type SvgEntity } from '../geneva/exporters/svg';
-import type { Primitive } from '../geneva/primitives';
 
 interface Props {
   params: GenevaParams;
@@ -11,48 +8,52 @@ interface Props {
   showDimensions?: boolean;
 }
 
-/** Layers we *render* in the preview. Auxiliary CAD layers (stop-disc cutouts,
- *  v-clearance arc) are visually noisy — they are kept in the DXF so Fusion can
- *  boolean-subtract them, but hidden here so the preview reads as the real
- *  visible mechanism: wheel rim + slots + crank disc + pin. */
-const PREVIEW_LAYERS = new Set([
-  'wheel_outer',
-  'wheel_slots',
-  'crank_outer',
-  'crank_pin',
-]);
-
-const STROKES: Record<string, string> = {
-  wheel_outer: 'stroke-wheel',
-  wheel_slots: 'stroke-wheel',
-  crank_outer: 'stroke-crank',
-  crank_pin: 'stroke-crank',
-};
-
-/** The pin is small — filling it makes it pop so the user actually sees the
- *  pin entering each slot. Everything else is hairline-outlined. */
-const FILLED_LAYERS = new Set(['crank_pin']);
-
+/**
+ * Live preview of the Geneva drive.
+ *
+ * Adopts the mask-based rendering approach of the original benbrandt22/genevaGen
+ * tool: each part is drawn as a *filled* shape with its cutouts subtracted via
+ * an SVG <mask>. The mask is in <defs> at the SVG root in non-rotated
+ * coordinates; the masked element is wrapped in a rotating <g> so the parent
+ * transform rotates the mask alongside the part — that's how the slots,
+ * stop-disc cutouts, and v-clearance crescent actually appear to rotate with
+ * their parent body.
+ *
+ * Visible elements:
+ *   - Geneva wheel (blue, semi-transparent fill) with 6 slot stadiums + 6
+ *     between-slot scallops cut out.
+ *   - Crank base disc (outer ring, light grey).
+ *   - Crank stop disc — the inner cylinder — visible at a slightly higher
+ *     opacity, with the v-clearance crescent cut out.
+ *   - Pin (filled accent dot).
+ *   - Optional centre crosshairs, centre-distance dimension line, and
+ *     engagement halo when the pin is inside the wheel.
+ */
 export function Preview({
   params, driveAngleDeg = 0, wheelAngleDeg = 0, showDimensions = true,
 }: Props) {
-  const wheel = useMemo(
-    () => buildWheelProfile(params).filter((p: Primitive) => PREVIEW_LAYERS.has(p.layer)),
-    [params]
-  );
-  const crank = useMemo(
-    () => buildCrankProfile(params, params.c).filter((p: Primitive) => PREVIEW_LAYERS.has(p.layer)),
-    [params]
-  );
+  const { a, b, c, n, p, s, w, y, z, v } = params;
+  const uid = useId().replace(/:/g, '');
+  const wheelMaskId = `wheel-mask-${uid}`;
+  const stopDiscMaskId = `stop-disc-mask-${uid}`;
+
+  // Pin position in math space (already including drive rotation).
+  const pinStart = Math.PI - Math.atan(b / a);
+  const pinAngleRad = pinStart + (driveAngleDeg * Math.PI) / 180;
+  const pinX = c + a * Math.cos(pinAngleRad);
+  const pinY = a * Math.sin(pinAngleRad);
+  // Match useAnimation's engagement threshold so the halo lights up exactly
+  // when the wheel begins to follow the pin.
+  const pinInWheel = Math.hypot(pinX, pinY) <= b - p / 2;
 
   const bbox = useMemo(() => {
     const pad = 1.25;
-    const totalW = (params.c + params.a + params.p + params.b) * pad;
-    const totalH = Math.max(params.a, params.b) * 2 * pad;
-    return { x: -params.b * pad, y: -totalH / 2, w: totalW, h: totalH };
-  }, [params]);
+    const totalW = (c + a + p + b) * pad;
+    const totalH = Math.max(a, b) * 2 * pad;
+    return { x: -b * pad, y: -totalH / 2, w: totalW, h: totalH };
+  }, [a, b, c, p]);
 
-  // Grid spacing in math units — scales with bbox so it never gets too dense.
+  // Grid spacing scales with bbox so density stays comfortable at any zoom.
   const gridUnit = useMemo(() => {
     const ref = Math.max(bbox.w, bbox.h);
     if (ref > 800) return 50;
@@ -61,32 +62,16 @@ export function Preview({
     return 1;
   }, [bbox]);
 
-  const renderEntity = (e: SvgEntity, idx: number) => {
-    const isFilled = FILLED_LAYERS.has(e.layer);
-    const cls = `${isFilled ? 'fill-crank/80' : 'fill-none'} ${STROKES[e.layer] ?? 'stroke-fg-muted'}`;
-    const sw = { strokeWidth: 1, vectorEffect: 'non-scaling-stroke' as const };
-    if (e.tag === 'circle')
-      return <circle key={idx} cx={e.cx} cy={e.cy} r={e.r} className={cls} {...sw} />;
-    if (e.tag === 'line')
-      return <line key={idx} x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2} className={cls} {...sw} />;
-    return <path key={idx} d={e.d} className={cls} {...sw} />;
-  };
+  // Crosshair size scales with geometry (3mm fixed was huge on b=11).
+  const crossSize = Math.max(Math.min(a, b) * 0.06, 0.5);
+  const crossStroke = Math.max(Math.min(a, b) * 0.008, 0.1);
 
-  const dimC = showDimensions ? params.c : 0;
+  // Slot rect dimensions — extend beyond rim so the cut opens cleanly to it.
+  const slotInnerX = b - s - w / 2;
+  const slotWidth = s + 2 * w;
+  const slotHeight = w;
 
-  // Crosshair size scales with the smaller part so they read at any scale
-  // (3 mm fixed was huge on a 11 mm wheel).
-  const crossSize = Math.max(Math.min(params.a, params.b) * 0.06, 0.5);
-  const crossStroke = Math.max(Math.min(params.a, params.b) * 0.008, 0.1);
-
-  // Pin world-coordinates (for the optional "engagement halo" cue during animation).
-  const pinStart = Math.PI - Math.atan(params.b / params.a);
-  const pinTheta = pinStart + (driveAngleDeg * Math.PI) / 180;
-  const pinX = params.c + params.a * Math.cos(pinTheta);
-  const pinY = params.a * Math.sin(pinTheta);
-  // Match the engagement threshold in useAnimation so the halo lights up
-  // exactly when the wheel begins to follow the pin.
-  const pinInWheel = Math.hypot(pinX, pinY) <= params.b - params.p / 2;
+  const nonScalingStroke = { vectorEffect: 'non-scaling-stroke' as const };
 
   return (
     <svg
@@ -95,74 +80,143 @@ export function Preview({
       preserveAspectRatio="xMidYMid meet"
     >
       <defs>
-        <pattern id="grid" width={gridUnit} height={gridUnit} patternUnits="userSpaceOnUse">
+        <pattern id={`grid-${uid}`} width={gridUnit} height={gridUnit} patternUnits="userSpaceOnUse">
           <path
             d={`M ${gridUnit} 0 L 0 0 0 ${gridUnit}`}
             className="fill-none stroke-border/50"
             strokeWidth={0.25}
-            vectorEffect="non-scaling-stroke"
+            {...nonScalingStroke}
           />
         </pattern>
-        <pattern id="grid-major" width={gridUnit * 5} height={gridUnit * 5} patternUnits="userSpaceOnUse">
+        <pattern id={`grid-major-${uid}`} width={gridUnit * 5} height={gridUnit * 5} patternUnits="userSpaceOnUse">
           <path
             d={`M ${gridUnit * 5} 0 L 0 0 0 ${gridUnit * 5}`}
             className="fill-none stroke-border-bright/70"
             strokeWidth={0.5}
-            vectorEffect="non-scaling-stroke"
+            {...nonScalingStroke}
           />
         </pattern>
+
+        {/* Wheel mask: white wheel disc minus n slot stadiums and n stop-disc cutouts.
+            Shapes are in non-rotated coords; the rotating wrapper <g> below makes
+            them follow the wheel's rotation. */}
+        <mask id={wheelMaskId}>
+          <circle cx={0} cy={0} r={b} fill="white" />
+          {Array.from({ length: n }).map((_, i) => {
+            const angle = (i * 360) / n;
+            return (
+              <g key={i} transform={`rotate(${angle} 0 0)`}>
+                <rect
+                  x={slotInnerX}
+                  y={-slotHeight / 2}
+                  width={slotWidth}
+                  height={slotHeight}
+                  rx={slotHeight / 2}
+                  ry={slotHeight / 2}
+                  fill="black"
+                />
+                {/* Stop-disc cutout sits at half-pitch (between slots). */}
+                <g transform={`rotate(${180 / n} 0 0)`}>
+                  <circle cx={c} cy={0} r={y} fill="black" />
+                </g>
+              </g>
+            );
+          })}
+        </mask>
+
+        {/* Stop-disc mask: white stop disc minus the v-clearance crescent. */}
+        <mask id={stopDiscMaskId}>
+          <circle cx={c} cy={0} r={z} fill="white" />
+          <circle cx={c - z} cy={-v} r={v} fill="black" />
+        </mask>
       </defs>
 
       {/* Grid backdrop. */}
-      <rect x={bbox.x} y={bbox.y} width={bbox.w} height={bbox.h} fill="url(#grid)" />
-      <rect x={bbox.x} y={bbox.y} width={bbox.w} height={bbox.h} fill="url(#grid-major)" />
+      <rect x={bbox.x} y={bbox.y} width={bbox.w} height={bbox.h} fill={`url(#grid-${uid})`} />
+      <rect x={bbox.x} y={bbox.y} width={bbox.w} height={bbox.h} fill={`url(#grid-major-${uid})`} />
 
       {/* Math-space (y-up). */}
       <g transform="scale(1,-1)">
-        {/* Crosshairs at part origins — scaled to geometry so they stay small
-            but still readable at any zoom level. */}
-        <g className="stroke-fg-subtle/40" strokeWidth={crossStroke} vectorEffect="non-scaling-stroke">
+        {/* Crosshairs at part origins. */}
+        <g className="stroke-fg-subtle/40" strokeWidth={crossStroke} {...nonScalingStroke}>
           <line x1={-crossSize} y1={0} x2={crossSize} y2={0} />
           <line x1={0} y1={-crossSize} x2={0} y2={crossSize} />
-          <line x1={params.c - crossSize} y1={0} x2={params.c + crossSize} y2={0} />
-          <line x1={params.c} y1={-crossSize} x2={params.c} y2={crossSize} />
+          <line x1={c - crossSize} y1={0} x2={c + crossSize} y2={0} />
+          <line x1={c} y1={-crossSize} x2={c} y2={crossSize} />
         </g>
 
-        {/* Center-distance c indicator (dashed, only when "Dimensions" is on). */}
+        {/* Centre-distance c indicator. */}
         {showDimensions && (
-          <g
-            className="stroke-fg-subtle/50"
+          <line
+            x1={0}
+            y1={0}
+            x2={c}
+            y2={0}
+            className="stroke-fg-subtle/40"
             strokeWidth={0.4}
-            vectorEffect="non-scaling-stroke"
             strokeDasharray="2 2"
-          >
-            <line x1={0} y1={0} x2={dimC} y2={0} />
-          </g>
+            {...nonScalingStroke}
+          />
         )}
 
-        {/* Faint engagement halo: when pin is inside wheel, show a soft ring so
-            the user knows the wheel SHOULD be rotating. */}
+        {/* GENEVA WHEEL — filled with mask, then a thin outline.
+            The rotating wrapper makes the mask rotate with the wheel. */}
+        <g transform={`rotate(${-wheelAngleDeg} 0 0)`}>
+          <circle
+            cx={0}
+            cy={0}
+            r={b}
+            mask={`url(#${wheelMaskId})`}
+            className="fill-wheel/15 stroke-wheel"
+            strokeWidth={1}
+            {...nonScalingStroke}
+          />
+        </g>
+
+        {/* CRANK — base + stop disc + pin all in one rotating group. */}
+        <g transform={`rotate(${-driveAngleDeg} ${c} 0)`}>
+          {/* Outer base disc (a + p). */}
+          <circle
+            cx={c}
+            cy={0}
+            r={a + p}
+            className="fill-crank/8 stroke-crank/85"
+            strokeWidth={1}
+            {...nonScalingStroke}
+          />
+          {/* Inner stop disc — the "inner cylinder" — with v-crescent cut. */}
+          <circle
+            cx={c}
+            cy={0}
+            r={z}
+            mask={`url(#${stopDiscMaskId})`}
+            className="fill-crank/30 stroke-crank"
+            strokeWidth={1}
+            {...nonScalingStroke}
+          />
+          {/* Pin — solid accent dot, instantly visible. */}
+          <circle
+            cx={c + a * Math.cos(pinStart)}
+            cy={a * Math.sin(pinStart)}
+            r={p / 2}
+            className="fill-accent stroke-accent"
+            strokeWidth={1}
+            {...nonScalingStroke}
+          />
+        </g>
+
+        {/* Engagement halo — drawn outside the rotating crank so the pin's
+            world-space position is the one we measured for pinInWheel. */}
         {pinInWheel && (
           <circle
             cx={pinX}
             cy={pinY}
-            r={params.p * 1.6}
+            r={p * 1.6}
             className="fill-none stroke-accent/40"
             strokeWidth={1.2}
-            vectorEffect="non-scaling-stroke"
+            {...nonScalingStroke}
           />
         )}
-
-        {/* Wheel — rotation tied directly to rAF, no CSS transition so it
-            tracks the animation precisely without phantom lag. */}
-        <g transform={`rotate(${-wheelAngleDeg} 0 0)`}>
-          {wheel.map(primitiveToSvgEntity).map(renderEntity)}
-        </g>
-
-        {/* Crank — rotates around (c, 0). */}
-        <g transform={`rotate(${-driveAngleDeg} ${params.c} 0)`}>
-          {crank.map(primitiveToSvgEntity).map(renderEntity)}
-        </g>
       </g>
     </svg>
   );
