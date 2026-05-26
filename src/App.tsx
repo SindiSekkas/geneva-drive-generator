@@ -83,18 +83,20 @@ export default function App() {
               />
             </div>
 
-            {/* Drawing-sheet footer strip — live status line */}
-            <div className="flex items-center justify-between border-t border-border bg-bg-elev-2/60 px-4 py-2 font-mono text-[10px] uppercase tracking-[0.16em]">
-              <span className="text-fg-subtle">
-                <span className="text-fg-muted">{state.input.n}</span> SLOTS
-                <span className="mx-2 text-border-bright">·</span>
-                <span className="text-fg-muted">{radiusLabel}</span> = <span className="tabular-nums text-fg-muted">{radiusValue.toFixed(1)}</span> MM
-                <span className="mx-2 text-border-bright">·</span>
-                <span className="text-fg-muted">c</span> = <span className="tabular-nums text-fg-muted">{params.c.toFixed(2)}</span> MM
+            {/* Drawing-sheet footer strip — live status line.
+                Compact glyph format so it never wraps on mobile. */}
+            <div className="flex items-center justify-between gap-3 border-t border-border bg-bg-elev-2/60 px-4 py-2 font-mono text-[10px] uppercase tracking-[0.14em]">
+              <span className="min-w-0 truncate text-fg-subtle">
+                <span className="text-fg-muted">n</span>=<span className="tabular-nums text-fg-muted">{state.input.n}</span>
+                <span className="mx-1.5 text-border-bright">·</span>
+                <span className="text-fg-muted">{radiusLabel}</span>=<span className="tabular-nums text-fg-muted">{radiusValue.toFixed(1)}</span>
+                <span className="mx-1.5 text-border-bright">·</span>
+                <span className="text-fg-muted">c</span>=<span className="tabular-nums text-fg-muted">{params.c.toFixed(2)}</span>
+                <span className="ml-1 text-fg-subtle/70">mm</span>
               </span>
-              <span className="text-fg-subtle">
+              <span className="shrink-0 text-fg-subtle">
                 {params.warnings.length > 0 ? (
-                  <span className="text-warn">⚠ {params.warnings.length} WARNING{params.warnings.length > 1 ? 'S' : ''}</span>
+                  <span className="text-warn">⚠ {params.warnings.length}</span>
                 ) : (
                   <span>● READY</span>
                 )}
