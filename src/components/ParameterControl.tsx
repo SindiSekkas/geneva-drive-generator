@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { cn } from '../lib/cn';
 
 interface Props {
@@ -19,7 +19,23 @@ export function ParameterControl({
   label, symbol, value, onChange, min, max, step,
   unit = 'mm', precision = 2, ticks = 5,
 }: Props) {
+  // Canonical formatted display — what the field shows when it's NOT focused.
   const display = Number.isInteger(step) ? value.toString() : value.toFixed(precision);
+
+  // Local draft while the user is typing. Decoupling the typed text from the
+  // canonical formatted value is what fixes the "can only type one digit" bug:
+  // without this, every keystroke triggered a re-format ("5" → "5.00") which
+  // pushed the cursor and ate subsequent input.
+  const [draft, setDraft] = useState(display);
+  const [focused, setFocused] = useState(false);
+
+  // Keep the draft in sync with the canonical value whenever it changes from
+  // outside (slider, URL state, mode toggle), but never while the user is
+  // actively editing the input.
+  useEffect(() => {
+    if (!focused) setDraft(display);
+  }, [display, focused]);
+
   const tickValues = useMemo(
     () => Array.from({ length: ticks }, (_, i) => min + (i * (max - min)) / (ticks - 1)),
     [min, max, ticks]
@@ -65,8 +81,21 @@ export function ParameterControl({
         <input
           type="number"
           min={min} max={max} step={step}
-          value={display}
-          onChange={(e) => onChange(Number(e.target.value))}
+          value={draft}
+          onFocus={() => setFocused(true)}
+          onBlur={() => {
+            setFocused(false);
+            // Snap back to the canonical format on commit. If the field
+            // was left empty or non-numeric, revert to last good value.
+            setDraft(display);
+          }}
+          onChange={(e) => {
+            // Always reflect what the user typed, even mid-edit states
+            // like "" or "5." that aren't valid numbers yet.
+            setDraft(e.target.value);
+            const n = parseFloat(e.target.value);
+            if (Number.isFinite(n)) onChange(n);
+          }}
           className={cn(
             'w-[78px] rounded-md border border-border bg-bg-elev-2 px-2 py-1',
             'font-mono text-[13px] tabular-nums text-fg',
