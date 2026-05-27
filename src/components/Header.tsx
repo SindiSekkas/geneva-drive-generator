@@ -52,7 +52,7 @@ export function Header() {
               Geneva Drive Generator
             </span>
             <span className="hidden font-mono text-[10px] uppercase tracking-[0.18em] text-fg-subtle sm:inline">
-              v0.1 · rev 01
+              v1.0
             </span>
           </div>
         </div>
@@ -62,7 +62,7 @@ export function Header() {
             units · mm
           </span>
           <a
-            href="https://github.com/<owner>/geneva-drive-generator"
+            href="https://github.com/SindiSekkas/geneva-drive-generator"
             target="_blank"
             rel="noreferrer"
             className="flex items-center gap-1.5 text-sm text-fg-muted transition-colors hover:text-fg"

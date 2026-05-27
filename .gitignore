@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 
 sample.dxf
+
+# AI agent tool config (Claude Code, etc.) — local to each contributor
+.claude/

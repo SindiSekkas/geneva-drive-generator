@@ -6,9 +6,9 @@ import type { GenevaParams } from '../geneva/params';
  *
  * Replicates the genevaDrawingController.js logic:
  *  - Drive spins at ~60°/sec when enabled.
- *  - Wheel angle = atan2(pin.y, pin.x − wheelX) when pin is inside the wheel
- *    (distance from origin ≤ b); else snaps to the halfway-between-slots
- *    locked position (180/n degrees).
+ *  - Wheel angle = atan2(pinY, pinX) when the pin center is inside the
+ *    wheel (distance ≤ b); else snaps to the halfway-between-slots locked
+ *    position (180/n degrees).
  *
  * When `enabled` is false, the drive freezes but the wheel angle is still
  * computed from the current driveAngleDeg so the parts look stationary in
@@ -44,13 +44,15 @@ export function useAnimation(params: GenevaParams, enabled: boolean) {
   const pinY = params.a * Math.sin(pinAngle);
   const distFromWheelCenter = Math.hypot(pinX, pinY);
 
-  // Engagement threshold: the pin's OUTER edge (not its center) must be at or
-  // inside the wheel rim. Using `b - p/2` accounts for the pin's finite radius
-  // so the wheel doesn't appear to "jump" before the pin is visibly in a slot.
-  const engagementRadius = params.b - params.p / 2;
-
+  // Engagement boundary is the wheel's outer rim (distance = b). At that exact
+  // boundary atan2(pinY, pinX) evaluates to ±180/n — the same as the parked
+  // angle — so the wheel's rotation is continuous at engagement entry, and the
+  // -180/n → +180/n step at engagement exit is exactly one slot pitch (360/n),
+  // which the n-fold symmetric wheel renders identically. Tightening the
+  // threshold by p/2 makes the exit step *not* a clean pitch and creates a
+  // visible micro-rotation when the pin leaves.
   let wheelAngleDeg: number;
-  if (distFromWheelCenter <= engagementRadius) {
+  if (distFromWheelCenter <= params.b) {
     wheelAngleDeg = (Math.atan2(pinY, pinX) * 180) / Math.PI;
   } else {
     wheelAngleDeg = 180 / params.n;

@@ -120,8 +120,14 @@ export function buildCrankProfile(
   } satisfies Circle);
 
   // 3. Stop disc outline: z-circle at crank center, v-circle clearance cutout
-  //    at (offsetX - z, -v). Emitted as Circle primitives (not full-circle arcs)
+  //    at (offsetX - z, +v). Emitted as Circle primitives (not full-circle arcs)
   //    so they import cleanly into strict DXF parsers as well as Fusion.
+  //
+  //    The +v (not −v) is intentional: the v-circle sits at driver-local
+  //    angle (180 − 180/n)° so that as the driver rotates by Δ/2 during
+  //    engagement the cut sweeps through world 180° (the wheel direction)
+  //    exactly when the wheel rim intrudes into the stop disc the most.
+  //    Mirrors the rationale in Preview.tsx's stop-disc mask.
   out.push({
     kind: 'circle',
     cx: offsetX,
@@ -132,7 +138,7 @@ export function buildCrankProfile(
   out.push({
     kind: 'circle',
     cx: offsetX - z,
-    cy: -v,
+    cy: v,
     r: v,
     layer: 'crank_stop_disc',
   } satisfies Circle);

@@ -110,23 +110,15 @@ export default function App() {
       </main>
 
       <footer className="mx-auto max-w-[1200px] px-6 pb-10 pt-2 reveal" style={{ animationDelay: '200ms' }}>
-        <div className="flex flex-col items-start justify-between gap-2 border-t border-border pt-4 font-mono text-[10px] uppercase tracking-[0.18em] text-fg-subtle sm:flex-row sm:items-center">
-          <span>
-            Geneva Drive Generator
-            <span className="mx-2 text-border-bright">·</span>
-            MIT
-          </span>
-          <span>
-            Math after Walsh ·{' '}
-            <a
-              href="https://github.com/benbrandt22/genevaGen"
-              target="_blank"
-              rel="noreferrer"
-              className="text-fg-muted underline decoration-fg-subtle/40 underline-offset-4 hover:text-fg"
-            >
-              benbrandt22/genevaGen
-            </a>
-          </span>
+        <div className="border-t border-border pt-4 font-mono text-[10px] uppercase tracking-[0.18em] text-fg-subtle">
+          <a
+            href="https://github.com/SindiSekkas"
+            target="_blank"
+            rel="noreferrer"
+            className="text-fg-muted underline decoration-fg-subtle/40 underline-offset-4 hover:text-fg"
+          >
+            github.com/SindiSekkas
+          </a>
         </div>
       </footer>
     </div>

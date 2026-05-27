@@ -103,8 +103,8 @@ export function ExportBar({ params }: { params: GenevaParams }) {
       </div>
 
       <p className="font-mono text-[10px] leading-relaxed text-fg-subtle">
-        DXF · AC1015 · both parts on separate layers at working center distance.
-        Import into Fusion 360 → extrude each layer.
+        DXF · R12 (AC1009) · both parts on separate layers at working center
+        distance. Import into Fusion 360 → extrude each layer.
       </p>
     </section>
   );

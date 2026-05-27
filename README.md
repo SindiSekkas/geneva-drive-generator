@@ -4,7 +4,7 @@ A browser-based parametric generator for [Geneva drive](https://en.wikipedia.org
 mechanisms. Dial in your parameters, see a live preview, and export a DXF
 ready to import into Fusion 360 (or any other CAD program).
 
-**[Live site](https://<owner>.github.io/geneva-drive-generator/)**
+**[Live site](https://SindiSekkas.github.io/geneva-drive-generator/)**
 
 ## What is a Geneva drive?
 

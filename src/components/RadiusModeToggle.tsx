@@ -6,16 +6,27 @@ interface Props {
   onChange: (m: RadiusMode) => void;
 }
 
-export function RadiusModeToggle({ mode, onChange }: Props) {
-  const Btn = ({ value, label }: { value: RadiusMode; label: string }) => (
+interface BtnProps {
+  value: RadiusMode;
+  label: string;
+  active: boolean;
+  onChange: (m: RadiusMode) => void;
+}
+
+// Defined at module scope (not inside RadiusModeToggle) so React treats it as a
+// stable component type across renders. Previously this was an inner function,
+// which React unmounts and remounts on every parent render — that occasionally
+// left the visible pressed-state out of sync with the actual mode.
+function Btn({ value, label, active, onChange }: BtnProps) {
+  return (
     <button
       type="button"
       onClick={() => onChange(value)}
-      aria-pressed={mode === value}
+      aria-pressed={active}
       className={cn(
         'relative flex-1 rounded-[5px] px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.16em]',
         'transition-all duration-150',
-        mode === value
+        active
           ? 'bg-bg text-fg shadow-[inset_0_0_0_1px_var(--color-border-bright),0_1px_0_rgba(0,0,0,0.4)]'
           : 'text-fg-subtle hover:text-fg-muted'
       )}
@@ -24,17 +35,20 @@ export function RadiusModeToggle({ mode, onChange }: Props) {
         <span
           className={cn(
             'size-1 rounded-full transition-colors',
-            mode === value ? 'bg-accent' : 'bg-fg-subtle/40'
+            active ? 'bg-accent' : 'bg-fg-subtle/40'
           )}
         />
         {label}
       </span>
     </button>
   );
+}
+
+export function RadiusModeToggle({ mode, onChange }: Props) {
   return (
     <div className="flex gap-1 rounded-md border border-border bg-bg-elev-2 p-1">
-      <Btn value="a" label="a · crank radius" />
-      <Btn value="b" label="b · wheel radius" />
+      <Btn value="a" label="a · crank radius" active={mode === 'a'} onChange={onChange} />
+      <Btn value="b" label="b · wheel radius" active={mode === 'b'} onChange={onChange} />
     </div>
   );
 }

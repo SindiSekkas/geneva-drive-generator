@@ -27,6 +27,11 @@ jobs:
       - run: npm test
       - run: npm run build
       - uses: actions/configure-pages@v5
+        with:
+          # Auto-enable Pages on the repo if it isn't already, using
+          # GitHub Actions as the source. Avoids the manual click in
+          # Settings → Pages.
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

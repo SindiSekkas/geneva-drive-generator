@@ -38,3 +38,25 @@ test('DXF contains the expected entity counts', () => {
   expect(arcs).toBe(6 + 6); // wheel rim + slot inners
   expect(lines).toBe(12);
 });
+
+test('DXF declares AC1009 (R12) — matches the entity format we emit', () => {
+  // The previous version declared AC1015 while emitting R12-style entities
+  // (no handles, no AcDb subclass markers). That mismatch caused strict
+  // parsers (Fusion 360 among them) to reject the file.
+  expect(dxf()).toMatch(/\$ACADVER[\r\n]+\s*1[\r\n]+AC1009/);
+});
+
+test('DXF declares a CONTINUOUS linetype before any layer references it', () => {
+  const s = dxf();
+  const ltypeIdx = s.indexOf('CONTINUOUS');
+  const firstLayerIdx = s.indexOf('LAYER\r\n2\r\nwheel_outer');
+  expect(ltypeIdx).toBeGreaterThan(-1);
+  expect(firstLayerIdx).toBeGreaterThan(ltypeIdx);
+});
+
+test('DXF emits no scientific-notation numbers (parser hostile)', () => {
+  // Geometric near-zeros (e.g. cos(π/2) → 6e-17) were leaking into coordinate
+  // fields as "6e-17", which several DXF importers refuse to parse.
+  const s = dxf();
+  expect(s).not.toMatch(/[0-9]e[-+][0-9]/);
+});
