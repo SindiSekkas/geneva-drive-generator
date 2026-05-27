@@ -4,15 +4,8 @@ import type { GenevaParams } from '../geneva/params';
 /**
  * Returns {driveAngleDeg, wheelAngleDeg} updated each animation frame.
  *
- * Replicates the genevaDrawingController.js logic:
- *  - Drive spins at ~60°/sec when enabled.
- *  - Wheel angle = atan2(pinY, pinX) when the pin center is inside the
- *    wheel (distance ≤ b); else snaps to the halfway-between-slots locked
- *    position (180/n degrees).
- *
- * When `enabled` is false, the drive freezes but the wheel angle is still
- * computed from the current driveAngleDeg so the parts look stationary in
- * a valid configuration.
+ * Note: when `enabled` is false the drive freezes, but wheelAngleDeg is still
+ * derived from the current driveAngleDeg so a paused frame stays valid.
  */
 export function useAnimation(params: GenevaParams, enabled: boolean) {
   const [driveAngleDeg, setDriveAngleDeg] = useState(0);
@@ -37,19 +30,17 @@ export function useAnimation(params: GenevaParams, enabled: boolean) {
     };
   }, [enabled]);
 
-  // Compute wheel angle from current drive angle + params.
   const pinStart = Math.PI - Math.atan(params.b / params.a);
   const pinAngle = pinStart + (driveAngleDeg * Math.PI) / 180;
   const pinX = params.c + params.a * Math.cos(pinAngle);
   const pinY = params.a * Math.sin(pinAngle);
   const distFromWheelCenter = Math.hypot(pinX, pinY);
 
-  // Engagement boundary is the wheel's outer rim (distance = b). At that exact
-  // boundary atan2(pinY, pinX) evaluates to ±180/n — the same as the parked
-  // angle — so the wheel's rotation is continuous at engagement entry, and the
-  // -180/n → +180/n step at engagement exit is exactly one slot pitch (360/n),
-  // which the n-fold symmetric wheel renders identically. Tightening the
-  // threshold by p/2 makes the exit step *not* a clean pitch and creates a
+  // Engagement boundary is the wheel's outer rim (distance = b). At that
+  // boundary atan2(pinY, pinX) lands on ±180/n exactly — the same as the
+  // parked angle — so the wheel-exit step from -180/n to +180/n is a clean
+  // slot pitch (360/n) and the n-fold symmetry hides it. Tightening the
+  // threshold by p/2 makes the exit step *not* a clean pitch and produces a
   // visible micro-rotation when the pin leaves.
   let wheelAngleDeg: number;
   if (distFromWheelCenter <= params.b) {

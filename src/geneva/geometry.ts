@@ -9,10 +9,8 @@ export function buildWheelProfile(params: GenevaParams): Profile {
   const { b, c, s, w, y, n } = params;
   const out: Profile = [];
 
-  // Half-angle subtended by the slot opening at the wheel center.
   const slotHalfAngle = Math.asin((w / 2) / b);
 
-  // 1. Rim: n arcs between slot openings.
   for (let i = 0; i < n; i++) {
     const slotCenter = (i * 2 * Math.PI) / n;
     const arcStart = slotCenter + slotHalfAngle;
@@ -28,16 +26,14 @@ export function buildWheelProfile(params: GenevaParams): Profile {
     } satisfies Arc);
   }
 
-  // 2. Slots: each is a stadium opened to the wheel rim.
-  // Loop-invariant geometry: build in canonical orientation (along +x), rotate per slot.
+  // Each slot is a stadium opened to the wheel rim — built in canonical
+  // orientation (along +x), then rotated per slot.
   const halfW = w / 2;
   // b - s == b - (a + b - c) == c - a: radial depth of the slot's inner end.
   const innerCenterX = b - s;
-  // x-coordinate of the rim edge where each slot opens.
   const lineOuterX = Math.sqrt(b * b - halfW * halfW);
   for (let i = 0; i < n; i++) {
     const slotAngle = (i * 2 * Math.PI) / n;
-    // Cache trig values; each is used 4 times (two rotate calls per side).
     const cosA = Math.cos(slotAngle);
     const sinA = Math.sin(slotAngle);
     const rotate = (x: number, ry: number) => ({
@@ -48,7 +44,6 @@ export function buildWheelProfile(params: GenevaParams): Profile {
     const a2 = rotate(innerCenterX, +halfW);
     const b1 = rotate(lineOuterX, -halfW);
     const b2 = rotate(innerCenterX, -halfW);
-    // Two parallel lines from rim opening inward to the semicircle tangent.
     out.push({
       kind: 'line', layer: 'wheel_slots',
       x1: a1.x, y1: a1.y, x2: a2.x, y2: a2.y,
@@ -57,8 +52,7 @@ export function buildWheelProfile(params: GenevaParams): Profile {
       kind: 'line', layer: 'wheel_slots',
       x1: b1.x, y1: b1.y, x2: b2.x, y2: b2.y,
     } satisfies Line);
-    // Inner semicircle: centered at (innerCenterX, 0), radius halfW,
-    // sweeping from +90° to +270° (closed end of the stadium).
+    // Closed end of the stadium: sweep +90° to +270°.
     out.push({
       kind: 'arc', layer: 'wheel_slots',
       cx: innerCenterX * cosA,
@@ -69,9 +63,7 @@ export function buildWheelProfile(params: GenevaParams): Profile {
     } satisfies Arc);
   }
 
-  // 3. Stop-disc cutout circles: n circles of radius y, centered at distance
-  //    c from the wheel center, rotated by half-slot-pitch so they sit
-  //    between slots.
+  // Stop-disc cutouts: rotated by half-slot-pitch so they sit between slots.
   const halfPitch = Math.PI / n;
   for (let i = 0; i < n; i++) {
     const angle = halfPitch + (i * 2 * Math.PI) / n;
@@ -88,8 +80,8 @@ export function buildWheelProfile(params: GenevaParams): Profile {
 }
 
 /**
- * Builds the 2D profile of the drive crank.
- * By default centers it at (c, 0) so wheel and crank ship in assembly position.
+ * Builds the 2D profile of the drive crank. Defaults to (c, 0) so wheel
+ * and crank ship in assembly position.
  * Layers: crank_outer, crank_pin, crank_stop_disc
  */
 export function buildCrankProfile(
@@ -99,7 +91,6 @@ export function buildCrankProfile(
   const { a, b, p, z, v } = params;
   const out: Profile = [];
 
-  // 1. Outer disc
   out.push({
     kind: 'circle',
     cx: offsetX,
@@ -108,8 +99,8 @@ export function buildCrankProfile(
     layer: 'crank_outer',
   } satisfies Circle);
 
-  // 2. Pin at the far-side dwell position (between slots, pin just clear of wheel).
-  //    π − atan(b/a) places the pin on the far side of the line of centers.
+  // Pin at the far-side dwell position: π − atan(b/a) places it on the far
+  // side of the line of centers, between slots and just clear of the wheel.
   const pinStart = Math.PI - Math.atan(b / a);
   out.push({
     kind: 'circle',
@@ -119,15 +110,12 @@ export function buildCrankProfile(
     layer: 'crank_pin',
   } satisfies Circle);
 
-  // 3. Stop disc outline: z-circle at crank center, v-circle clearance cutout
-  //    at (offsetX - z, +v). Emitted as Circle primitives (not full-circle arcs)
-  //    so they import cleanly into strict DXF parsers as well as Fusion.
-  //
-  //    The +v (not −v) is intentional: the v-circle sits at driver-local
-  //    angle (180 − 180/n)° so that as the driver rotates by Δ/2 during
-  //    engagement the cut sweeps through world 180° (the wheel direction)
-  //    exactly when the wheel rim intrudes into the stop disc the most.
-  //    Mirrors the rationale in Preview.tsx's stop-disc mask.
+  // Stop disc: z-circle at crank center, v-circle clearance cutout at
+  // (offsetX - z, +v). +v (not −v) is intentional: the v-circle sits at
+  // driver-local (180 − 180/n)° so the cut sweeps through world 180° during
+  // engagement, exactly when the wheel rim intrudes into the stop disc most.
+  // Mirrors the rationale in Preview.tsx's stop-disc mask. Emitted as Circle
+  // primitives (not full-circle arcs) so strict DXF parsers and Fusion accept them.
   out.push({
     kind: 'circle',
     cx: offsetX,

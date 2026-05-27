@@ -1,11 +1,8 @@
 import type { Primitive } from '../primitives';
 
 /**
- * Convert a Primitive into the props/string needed by an SVG element.
- * Returns a discriminated union so callers can switch on `tag`.
- *
- * The expected rendering parent applies `transform="scale(1, -1)"`, so
- * math-coordinate primitives display with y-up.
+ * Convert a Primitive into props for an SVG element. The rendering parent is
+ * expected to apply `transform="scale(1, -1)"` so math-coords display y-up.
  */
 export type SvgEntity =
   | { tag: 'circle'; cx: number; cy: number; r: number; layer: string }
@@ -23,7 +20,6 @@ export function primitiveToSvgEntity(p: Primitive): SvgEntity {
         layer: p.layer,
       };
     case 'arc': {
-      // SVG path A command in math-space (parent flips y).
       const sx = p.cx + p.r * Math.cos(p.startAngle);
       const sy = p.cy + p.r * Math.sin(p.startAngle);
       const ex = p.cx + p.r * Math.cos(p.endAngle);

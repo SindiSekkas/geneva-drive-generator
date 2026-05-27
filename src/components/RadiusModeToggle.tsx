@@ -13,10 +13,9 @@ interface BtnProps {
   onChange: (m: RadiusMode) => void;
 }
 
-// Defined at module scope (not inside RadiusModeToggle) so React treats it as a
-// stable component type across renders. Previously this was an inner function,
-// which React unmounts and remounts on every parent render — that occasionally
-// left the visible pressed-state out of sync with the actual mode.
+// Module-scope so React sees a stable component type across renders. As an
+// inner function it was remounted on every parent render, occasionally
+// desyncing the visible pressed-state from the actual mode.
 function Btn({ value, label, active, onChange }: BtnProps) {
   return (
     <button

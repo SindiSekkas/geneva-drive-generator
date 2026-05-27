@@ -58,6 +58,7 @@ export function reducer(state: UiState, action: Action): UiState {
   }
 }
 
+/** Reducer-backed UI state plus the memoized derived GenevaParams. */
 export function useGenevaParams() {
   const [state, dispatch] = useReducer(reducer, DEFAULT_STATE);
   const params: GenevaParams = useMemo(

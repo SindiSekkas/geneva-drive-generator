@@ -19,19 +19,17 @@ export function ParameterControl({
   label, symbol, value, onChange, min, max, step,
   unit = 'mm', precision = 2, ticks = 5,
 }: Props) {
-  // Canonical formatted display — what the field shows when it's NOT focused.
   const display = Number.isInteger(step) ? value.toString() : value.toFixed(precision);
 
-  // Local draft while the user is typing. Decoupling the typed text from the
-  // canonical formatted value is what fixes the "can only type one digit" bug:
-  // without this, every keystroke triggered a re-format ("5" → "5.00") which
-  // pushed the cursor and ate subsequent input.
+  // Local draft while typing. Decoupling the typed text from the canonical
+  // formatted value fixes the "can only type one digit" bug: without it,
+  // every keystroke re-formatted ("5" → "5.00"), pushing the cursor and
+  // eating subsequent input.
   const [draft, setDraft] = useState(display);
   const [focused, setFocused] = useState(false);
 
-  // Keep the draft in sync with the canonical value whenever it changes from
-  // outside (slider, URL state, mode toggle), but never while the user is
-  // actively editing the input.
+  // Sync draft with the canonical value when it changes externally, but not
+  // while the user is actively editing.
   useEffect(() => {
     if (!focused) setDraft(display);
   }, [display, focused]);
@@ -43,7 +41,6 @@ export function ParameterControl({
 
   return (
     <div className="flex flex-col gap-2 py-1">
-      {/* Top row: symbol + label, with unit on the far right. */}
       <div className="flex items-baseline justify-between">
         <div className="flex items-baseline gap-2">
           <span className="font-mono text-[15px] font-medium text-fg">{symbol}</span>
@@ -54,7 +51,6 @@ export function ParameterControl({
         </span>
       </div>
 
-      {/* Slider + numeric input row. */}
       <div className="flex items-center gap-3">
         <div className="relative flex-1">
           <input
@@ -65,7 +61,6 @@ export function ParameterControl({
             className="slider-precision w-full"
             aria-label={`${symbol} (${label})`}
           />
-          {/* Vernier-style tick marks under the track. */}
           <div className="pointer-events-none absolute left-[7px] right-[7px] top-[14px] flex justify-between">
             {tickValues.map((_, i) => (
               <span
@@ -85,13 +80,9 @@ export function ParameterControl({
           onFocus={() => setFocused(true)}
           onBlur={() => {
             setFocused(false);
-            // Snap back to the canonical format on commit. If the field
-            // was left empty or non-numeric, revert to last good value.
             setDraft(display);
           }}
           onChange={(e) => {
-            // Always reflect what the user typed, even mid-edit states
-            // like "" or "5." that aren't valid numbers yet.
             setDraft(e.target.value);
             const n = parseFloat(e.target.value);
             if (Number.isFinite(n)) onChange(n);

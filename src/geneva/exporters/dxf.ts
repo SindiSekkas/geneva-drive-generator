@@ -3,19 +3,15 @@ import type { Profile, Primitive } from '../primitives';
 /**
  * Minimal AutoCAD R12 (AC1009) DXF emitter.
  *
- * Why R12 and not a newer flavor: R12 is the simplest dialect that every
- * modern CAD parser (Fusion 360, FreeCAD, LibreCAD, QCAD, OnShape, dxfgrabber,
- * ezdxf, etc.) accepts, and it does NOT require entity handles or AcDbEntity
- * subclass markers. The previous version of this file declared `AC1015`
- * (AutoCAD 2000) in the header while emitting R12-style entities — that's a
- * spec violation and several parsers will either reject the file outright or
- * silently drop entities.
+ * R12 is the simplest dialect every modern CAD parser (Fusion 360, FreeCAD,
+ * LibreCAD, QCAD, OnShape, dxfgrabber, ezdxf) accepts, and it does NOT require
+ * entity handles or AcDbEntity subclass markers. Do not declare AC1015 in the
+ * header while emitting R12-style entities — that mismatch makes several
+ * parsers reject the file or silently drop entities.
  *
- * Number formatting rules:
- *  - Fixed decimal notation only — never scientific. The DXF spec allows
- *    scientific, but Fusion 360 and other importers don't handle 1e-15 etc.
- *    in coordinate fields. We snap any |value| < 1e-9 to 0.
- *  - 6 decimal places is plenty for sub-micron precision at typical mm scales.
+ * Number formatting: fixed decimal only — never scientific. Fusion 360 and
+ * other importers don't accept 1e-15 in coordinate fields. We snap |v| < 1e-9
+ * to 0. 6 decimals = sub-micron precision at typical mm scales.
  */
 
 const NL = '\r\n';
@@ -31,8 +27,7 @@ function code(group: number, value: string | number): string {
   return `${group}${NL}${v}${NL}`;
 }
 
-// Integer-only group code — for things like flags and color numbers where
-// `num()` would emit "0.000000" instead of "0".
+// Integer-only group code for flags and color numbers (avoids "0.000000").
 function icode(group: number, value: number): string {
   return `${group}${NL}${Math.trunc(value)}${NL}`;
 }
@@ -47,10 +42,9 @@ const LAYER_COLORS: Record<string, number> = {
 };
 
 function tables(layers: string[]): string {
-  // Minimal LTYPE table declaring CONTINUOUS — referenced by every layer below.
-  // R12 doesn't strictly require this (CONTINUOUS is a built-in default in
-  // AutoCAD), but strict parsers like Fusion 360 warn if they see a layer
-  // reference a linetype that wasn't declared.
+  // Declare CONTINUOUS explicitly: R12 treats it as a built-in default, but
+  // strict parsers like Fusion 360 warn when a layer references an
+  // undeclared linetype.
   const ltype = [
     code(0, 'TABLE'),
     code(2, 'LTYPE'),

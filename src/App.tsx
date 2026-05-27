@@ -9,7 +9,6 @@ import { useGenevaParams } from './hooks/useGenevaParams';
 import { useUrlState, parseUrl } from './hooks/useUrlState';
 import { useAnimation } from './hooks/useAnimation';
 
-/** Four corner brackets that frame the preview SVG — viewfinder/CAD vibe. */
 function CornerTicks() {
   const base =
     'absolute size-3 border-fg-subtle/60 pointer-events-none';
@@ -48,7 +47,6 @@ export default function App() {
       <Header />
 
       <main className="mx-auto grid max-w-[1200px] grid-cols-1 gap-8 px-6 py-10 lg:grid-cols-[420px_1fr]">
-        {/* LEFT COLUMN — input + derived. */}
         <div className="flex flex-col gap-6 reveal" style={{ animationDelay: '40ms' }}>
           <ParameterPanel
             state={state}
@@ -59,12 +57,9 @@ export default function App() {
           <DerivedValuesCard params={params} />
         </div>
 
-        {/* RIGHT COLUMN — preview + controls + export. */}
         <div className="flex flex-col gap-4 reveal" style={{ animationDelay: '120ms' }}>
-          {/* Preview frame */}
           <div className="relative overflow-hidden rounded-lg border border-border bg-bg-elev">
             <CornerTicks />
-            {/* Drawing-sheet header strip */}
             <div className="flex items-center justify-between border-b border-border bg-bg-elev-2/60 px-4 py-2 font-mono text-[10px] uppercase tracking-[0.18em] text-fg-subtle">
               <span className="flex items-center gap-2">
                 <span className="size-1.5 rounded-full bg-accent pulse-soft" />
@@ -73,7 +68,6 @@ export default function App() {
               <span>VIEW · TOP · 1:1</span>
             </div>
 
-            {/* SVG canvas */}
             <div className="aspect-[4/3] w-full">
               <Preview
                 params={params}
@@ -83,8 +77,7 @@ export default function App() {
               />
             </div>
 
-            {/* Drawing-sheet footer strip — live status line.
-                Compact glyph format so it never wraps on mobile. */}
+            {/* Compact glyph format so the status line never wraps on mobile. */}
             <div className="flex items-center justify-between gap-3 border-t border-border bg-bg-elev-2/60 px-4 py-2 font-mono text-[10px] uppercase tracking-[0.14em]">
               <span className="min-w-0 truncate text-fg-subtle">
                 <span className="text-fg-muted">n</span>=<span className="tabular-nums text-fg-muted">{state.input.n}</span>

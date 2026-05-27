@@ -44,7 +44,6 @@ export function ExportBar({ params }: { params: GenevaParams }) {
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        {/* Primary DXF button. */}
         <button
           type="button"
           onClick={handleDxf}
@@ -57,13 +56,11 @@ export function ExportBar({ params }: { params: GenevaParams }) {
         >
           <DownloadIcon className="size-3.5 transition-transform duration-200 group-hover:translate-y-px" />
           Export DXF
-          {/* Filename hint — hidden below ~sm because it makes the row too wide. */}
           <span className="ml-1 hidden font-mono text-[10px] tracking-[0.16em] text-accent-fg/60 sm:inline">
             ↳ geneva-drive.dxf
           </span>
         </button>
 
-        {/* Disabled STL button with delayed tooltip. */}
         <div
           className="relative"
           onMouseEnter={() => setTip(true)}

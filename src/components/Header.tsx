@@ -1,7 +1,4 @@
-/**
- * Inline Geneva-wheel logo mark — a stylized 6-position Geneva drive in 18px.
- * Hairline strokes, matches the engineering aesthetic.
- */
+/** Inline Geneva-wheel logo mark — stylized 6-position drive at 18px. */
 function WheelMark() {
   return (
     <svg
@@ -12,9 +9,7 @@ function WheelMark() {
       stroke="currentColor"
       strokeWidth={1.25}
     >
-      {/* outer wheel */}
       <circle cx={0} cy={0} r={9} />
-      {/* 6 slot indicator dashes around the rim */}
       {Array.from({ length: 6 }).map((_, i) => {
         const a = (i * Math.PI) / 3;
         const x1 = 7 * Math.cos(a);
@@ -23,16 +18,12 @@ function WheelMark() {
         const y2 = 9 * Math.sin(a);
         return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} />;
       })}
-      {/* drive pin (small filled dot offset from center, simulating crank position) */}
       <circle cx={0} cy={0} r={1.2} fill="currentColor" stroke="none" />
     </svg>
   );
 }
 
-/**
- * Inline GitHub mark (24×24 official octocat path, hand-trimmed).
- * Avoids lucide-react brand-icon dependency.
- */
+/** Inline GitHub octocat mark — avoids a brand-icon dependency. */
 function GithubMark() {
   return (
     <svg viewBox="0 0 24 24" className="size-4" aria-hidden fill="currentColor">

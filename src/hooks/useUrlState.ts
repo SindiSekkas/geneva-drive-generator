@@ -35,8 +35,11 @@ export function parseUrl(search: string): Partial<UiState> | null {
   };
 }
 
-/** Debounce-mirror state into the URL query string. Loading from URL is
- *  handled in App.tsx so this hook stays one-directional. */
+/**
+ * Debounce-mirrors state into the URL query string.
+ *
+ * Note: loading from URL is handled in App.tsx so this hook stays one-directional.
+ */
 export function useUrlState(state: UiState): void {
   useEffect(() => {
     const id = setTimeout(() => {

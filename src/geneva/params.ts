@@ -19,8 +19,7 @@ export interface GenevaParams {
   warnings: string[];
 }
 
-/** The stop arc on the crank uses 1.5× the pin radius — see Walsh's Handbook
- *  of Machining and Metalworking Calculations, derivation in source PDF. */
+/** 1.5× pin radius — Walsh's Handbook of Machining and Metalworking Calculations. */
 const STOP_ARC_FACTOR = 1.5;
 
 export function deriveParams(input: GenevaInput): GenevaParams {
@@ -60,7 +59,7 @@ export function deriveParams(input: GenevaInput): GenevaParams {
       'Stop arc radius y is not positive — pin is too large relative to crank radius'
     );
   }
-  // NOTE: When y <= 0, z and v are also nonsensical. Callers MUST check
+  // When y <= 0, z and v are also nonsensical. Callers MUST check
   // the returned `warnings` array before trusting z/v in geometry output.
   const z = y - t;
   const v = (b * z) / a;

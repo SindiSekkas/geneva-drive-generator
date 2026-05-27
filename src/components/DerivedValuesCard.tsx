@@ -18,7 +18,7 @@ function Row({ k, label, formula, value }: { k: string; label: string; formula: 
   useEffect(() => {
     if (prev.current !== value && ref.current) {
       ref.current.classList.remove('value-flash');
-      // Force reflow so the animation re-fires for consecutive identical-class changes.
+      // Force reflow so the animation re-fires on consecutive changes.
       void ref.current.offsetWidth;
       ref.current.classList.add('value-flash');
       prev.current = value;
