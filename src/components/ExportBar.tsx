@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { GenevaParams } from '../geneva/params';
 import { buildWheelProfile, buildCrankProfile } from '../geneva/geometry';
 import { profilesToDxf } from '../geneva/exporters/dxf';
@@ -24,13 +24,88 @@ function DownloadIcon({ className }: { className?: string }) {
   );
 }
 
+function CloseIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      className={className}
+      aria-hidden
+    >
+      <path d="M4 4l8 8M12 4l-8 8" />
+    </svg>
+  );
+}
+
+type ExportTarget = 'combined' | 'gear' | 'cam';
+
+const EXPORT_OPTIONS: Array<{
+  id: ExportTarget;
+  title: string;
+  filename: string;
+  blurb: string;
+}> = [
+  {
+    id: 'combined',
+    title: 'Combined assembly',
+    filename: 'geneva-drive.dxf',
+    blurb: 'Wheel + crank at working centre distance. Both on separate layers — ready to extrude in Fusion.',
+  },
+  {
+    id: 'gear',
+    title: 'Gear only',
+    filename: 'geneva-wheel.dxf',
+    blurb: 'Just the Geneva wheel, centred at the origin.',
+  },
+  {
+    id: 'cam',
+    title: 'Cam only',
+    filename: 'geneva-crank.dxf',
+    blurb: 'Just the drive crank (outer disc + stop disc + pin), centred at the origin.',
+  },
+];
+
 export function ExportBar({ params }: { params: GenevaParams }) {
-  const handleDxf = () => {
-    const dxf = profilesToDxf([buildWheelProfile(params), buildCrankProfile(params)]);
-    downloadText('geneva-drive.dxf', dxf, 'application/dxf');
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const [open, setOpen] = useState(false);
+  const [stlTip, setStlTip] = useState(false);
+
+  const closeDialog = () => {
+    setOpen(false);
+    dialogRef.current?.close();
   };
 
-  const [tip, setTip] = useState(false);
+  // Sync the <dialog>'s native modal state with our React state so the user
+  // can dismiss with Esc or backdrop click and React still re-renders.
+  useEffect(() => {
+    const dlg = dialogRef.current;
+    if (!dlg) return;
+    if (open && !dlg.open) dlg.showModal();
+    if (!open && dlg.open) dlg.close();
+    const onCancel = () => setOpen(false);
+    const onClose = () => setOpen(false);
+    dlg.addEventListener('cancel', onCancel);
+    dlg.addEventListener('close', onClose);
+    return () => {
+      dlg.removeEventListener('cancel', onCancel);
+      dlg.removeEventListener('close', onClose);
+    };
+  }, [open]);
+
+  const exportFor = (target: ExportTarget) => {
+    const profiles =
+      target === 'combined'
+        ? [buildWheelProfile(params), buildCrankProfile(params)]
+        : target === 'gear'
+        ? [buildWheelProfile(params)]
+        : [buildCrankProfile(params, 0)]; // crank-only: re-centre at origin
+    const filename = EXPORT_OPTIONS.find((o) => o.id === target)!.filename;
+    downloadText(filename, profilesToDxf(profiles), 'application/dxf');
+    closeDialog();
+  };
 
   return (
     <section className="flex flex-col gap-4 rounded-lg border border-border bg-bg-elev p-6">
@@ -46,7 +121,7 @@ export function ExportBar({ params }: { params: GenevaParams }) {
       <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
-          onClick={handleDxf}
+          onClick={() => setOpen(true)}
           className={cn(
             'group relative flex shrink-0 items-center gap-2.5 rounded-md bg-accent px-4 py-2.5',
             'font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-accent-fg',
@@ -57,14 +132,14 @@ export function ExportBar({ params }: { params: GenevaParams }) {
           <DownloadIcon className="size-3.5 transition-transform duration-200 group-hover:translate-y-px" />
           Export DXF
           <span className="ml-1 hidden font-mono text-[10px] tracking-[0.16em] text-accent-fg/60 sm:inline">
-            ↳ geneva-drive.dxf
+            ↳ choose parts
           </span>
         </button>
 
         <div
           className="relative"
-          onMouseEnter={() => setTip(true)}
-          onMouseLeave={() => setTip(false)}
+          onMouseEnter={() => setStlTip(true)}
+          onMouseLeave={() => setStlTip(false)}
         >
           <button
             type="button"
@@ -81,7 +156,7 @@ export function ExportBar({ params }: { params: GenevaParams }) {
               SOON
             </span>
           </button>
-          {tip && (
+          {stlTip && (
             <div
               role="tooltip"
               className={cn(
@@ -103,6 +178,102 @@ export function ExportBar({ params }: { params: GenevaParams }) {
         DXF · R12 (AC1009) · both parts on separate layers at working center
         distance. Import into Fusion 360 → extrude each layer.
       </p>
+
+      {/* Native <dialog>: gets accessible Esc-to-close + backdrop click + a
+          page-level modal stack out of the box. Styling is matched to the
+          rest of the panel chrome. */}
+      <dialog
+        ref={dialogRef}
+        aria-labelledby="export-dialog-title"
+        onClick={(e) => {
+          // Click on the backdrop (the dialog element itself, not its contents)
+          // should close. The inner <div> stops propagation for content clicks.
+          if (e.target === dialogRef.current) closeDialog();
+        }}
+        className={cn(
+          // Native <dialog> in showModal mode is positioned with
+          // `position: fixed; inset: 0` by the UA, then centred via
+          // `margin: auto`. Tailwind's preflight resets margins to 0,
+          // which knocks the dialog into the top-left. `m-auto` brings
+          // the centring back.
+          'fixed inset-0 m-auto',
+          'rounded-lg border border-border-bright bg-bg-elev p-0',
+          'max-w-[440px] w-[calc(100%-2rem)] h-fit',
+          'text-fg shadow-2xl',
+          'backdrop:bg-bg/70 backdrop:backdrop-blur-sm',
+          'open:animate-[reveal_180ms_var(--ease-precision)_both]'
+        )}
+      >
+        <div className="flex items-center justify-between gap-3 border-b border-border bg-bg-elev-2/60 px-5 py-3">
+          <h3
+            id="export-dialog-title"
+            className="font-mono text-[11px] uppercase tracking-[0.18em] text-fg-muted"
+          >
+            Export DXF — pick parts
+          </h3>
+          <button
+            type="button"
+            onClick={closeDialog}
+            aria-label="Close"
+            className="rounded p-1 text-fg-subtle transition-colors hover:bg-bg-elev-2 hover:text-fg"
+          >
+            <CloseIcon className="size-3.5" />
+          </button>
+        </div>
+
+        <ul className="flex flex-col gap-2 p-4">
+          {EXPORT_OPTIONS.map((opt) => (
+            <li key={opt.id}>
+              <button
+                type="button"
+                onClick={() => exportFor(opt.id)}
+                className={cn(
+                  'group flex w-full items-start gap-3 rounded-md border border-border bg-bg-elev-2/40 px-4 py-3 text-left',
+                  'transition-all duration-150',
+                  'hover:border-accent/60 hover:bg-bg-elev-2 focus-visible:outline-none focus-visible:border-accent',
+                  'focus-visible:shadow-[0_0_0_3px_var(--color-accent-dim)]'
+                )}
+              >
+                <span
+                  className={cn(
+                    'mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md border border-border-bright/60 bg-bg text-fg-muted',
+                    'transition-colors group-hover:border-accent group-hover:text-accent'
+                  )}
+                >
+                  <DownloadIcon className="size-3.5" />
+                </span>
+                <span className="flex flex-1 flex-col gap-1">
+                  <span className="flex items-baseline justify-between gap-2">
+                    <span className="font-mono text-[12px] font-medium uppercase tracking-[0.14em] text-fg">
+                      {opt.title}
+                    </span>
+                    <span className="font-mono text-[10px] tracking-[0.12em] text-fg-subtle">
+                      ↳ {opt.filename}
+                    </span>
+                  </span>
+                  <span className="text-[12px] leading-snug text-fg-muted">
+                    {opt.blurb}
+                  </span>
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+
+        <div className="flex justify-end border-t border-border bg-bg-elev-2/40 px-4 py-3">
+          <button
+            type="button"
+            onClick={closeDialog}
+            className={cn(
+              'rounded-md border border-border px-3 py-1.5',
+              'font-mono text-[10px] uppercase tracking-[0.16em] text-fg-muted',
+              'transition-colors hover:border-border-bright hover:text-fg'
+            )}
+          >
+            Cancel
+          </button>
+        </div>
+      </dialog>
     </section>
   );
 }
